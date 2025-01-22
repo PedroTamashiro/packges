@@ -30,10 +30,10 @@ def is_time_between(begin_time, end_time, check_time=None):
         return check_time >= begin_time or check_time <= end_time
 
 def verifyHour(minute):
-    if is_time_between(time(6,00), time(22,00)):
+    if is_time_between(time(6,00), time(5,00)):
         if datetime.now().minute == minute:
             return 1
-    elif time(23,00):
+    elif is_time_between(time(5,00), time(6,00)):
         return 2
     return 0
 
@@ -177,7 +177,7 @@ def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logfilename:str,
             sql.close()
             connection.close()
             logging.info('closing connection')
-            return 1
+            return dataFrame
     
         logging.warning('not been possible execute the program')
         sql.close()

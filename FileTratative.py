@@ -9,6 +9,7 @@ def renameFile(oldName, Neo):
     format[1] = '.' + format[1]
     newPath = DOWNLOADPATH + '\\' + Neo + format[1]
     os.rename(oldPath, newPath)
+    return newPath
     
 def waitDownload(NameFile, timeout=60):
     pathFile = os.path.join(DOWNLOADPATH, NameFile)
