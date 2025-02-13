@@ -3,11 +3,11 @@ from time import sleep, time
 
 DOWNLOADPATH = r"C:\Users\Cliente\Documents\EletroTrash"
 
-def renameFile(oldName, Neo):
+def renameFile(oldName, newName):
     oldPath = DOWNLOADPATH + '\\' + oldName
     format = str.split(oldName, '.')
     format[1] = '.' + format[1]
-    newPath = DOWNLOADPATH + '\\' + Neo + format[1]
+    newPath = DOWNLOADPATH + '\\' + newName + format[1]
     os.rename(oldPath, newPath)
     return newPath
     

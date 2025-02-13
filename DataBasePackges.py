@@ -4,16 +4,18 @@ import socket
 from datetime import datetime, time
 from time import sleep
 import os
+import sys
 import logging
+sys.path.append('C:\MiraiCodes\Packges')  # Adicione o caminho do diretório pai
 
 def loggingPredef(logfilename):
     logger = logging.getLogger(__name__)
-    log_dir = r'C:\Users\Cliente\Desktop\logs'
-
+    log_dir = r'C:\Users\cliente\Desktop\logs'
+    
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-    log_path = os.path.join(log_dir, logfilename)
+    log_path = log_dir + r'\updateTeam.log'
 
     logging.basicConfig(
         filename=log_path,
@@ -34,7 +36,8 @@ def verifyHour(minute):
         if datetime.now().minute == minute:
             return 1
     elif is_time_between(time(5,00), time(6,00)):
-        return 2
+        if datetime.now().minute == minute:
+            return 2
     return 0
 
 def isConnected():
@@ -52,24 +55,24 @@ def isConnected():
     logging.info('connection False')
     return False
 
-def wifi_connect(wifiname = '\"Mirai Platinum\"'):
+def wifi_connect():
     logging.info('Verify Connection')
     isConnec = isConnected()
     while not isConnec:
         # connect to the given wifi network
         logging.error('Erro Wifi Connection Retrying in 10 sec...')
         sleep(10)
-        os.system(f'''cmd /c "netsh wlan connect name={wifiname}"''')
+        os.system(f'''cmd /c "netsh wlan connect name=\"Mirai Platinum\""''')
         sleep(3)
         isConnec = isConnected()
     logging.info('Connection OK')
 
 ## getting Connection
-def connectBD(DataBase, password, host):
+def connectBD(DataBase, host):
     try:
         connection = mariadb.connect(
             user = 'root',
-            password = password,
+            password = 'M1r@i2024',
             host = host,
             port = 3306,
             database = DataBase
@@ -82,13 +85,17 @@ def connectBD(DataBase, password, host):
         raise Exception (ConnectionError)
 
 ## Define delete function
-def delete(connection, cursor, Keys, DataBaseTable, ColumnName):
+def delete(connection, cursor, Keys, DataBaseTable, ColumnName, mode):
     try:
         ## Convert columns to String
         str_Keys = Keys.astype(str).tolist()
         str_Keys = ','.join(Key for Key in str_Keys)
         
-        DeleteQuery = f"DELETE FROM {DataBaseTable} WHERE {ColumnName} IN ({str_Keys})"
+        if mode == 0:
+            DeleteQuery = f"DELETE FROM {DataBaseTable} WHERE {ColumnName} IN ({str_Keys})"
+        elif mode == 1:
+            DeleteQuery = f"DELETE FROM {DataBaseTable}" 
+            
         
         cursor.execute(DeleteQuery)
         connection.commit()
@@ -96,8 +103,8 @@ def delete(connection, cursor, Keys, DataBaseTable, ColumnName):
     except:
         raise Exception ('ExecutingError')
     
-## Define insert function
-def insert(connection, cursor, newTable:pd.DataFrame, DataBaseTable):
+## Define insertMany function
+def insertMany(connection, cursor, newTable:pd.DataFrame, DataBaseTable):
     try:
         quant = newTable.columns
         
@@ -114,6 +121,18 @@ def insert(connection, cursor, newTable:pd.DataFrame, DataBaseTable):
         logging.info('All the Values inserted in the DataBase')
     except:
         raise Exception('ExecutingError')
+    
+## Define insert function
+def insert(connection, cursor, row, query):
+    try:
+        cursor.execute(query, row)
+        
+        connection.commit()
+        logging.info('All the Values inserted in the DataBase')
+        
+    except Exception as e:
+        logging.error(f'Error during insert: {str(e)}')
+        raise Exception('ExecutingError')
 
 ## Define Select Function
 def select(cursor, dataBaseTable, selectType='*'):
@@ -127,18 +146,18 @@ def select(cursor, dataBaseTable, selectType='*'):
         dataFrame = pd.DataFrame(rows, columns=columns)
         logging.info('The Values are selected with sucesfull')
         return dataFrame
-    except:
-        raise Exception('ExecutingError')
-        
-def mainUpdate(DataFrame: pd.DataFrame, DataBase: str ,DataBaseTableName: str, DataBaseColumnName: str, logfilename:str, password:str, host = 'localhost', cont=0):
+    except Exception as error:
+        raise error
+    
+def mainUpdate(DataFrame: pd.DataFrame, DataBase: str ,DataBaseTableName: str, DataBaseColumnName: str, logfilename:str, host = 'localhost', mode = 0,cont=0):
     try:
         logging = loggingPredef(logfilename)
         if cont < 10:
-            connection, sql = connectBD(DataBase, password, host)
+            connection, sql = connectBD(DataBase, host)
             Key = DataFrame[DataBaseColumnName]
             
-            delete(connection, sql, Key, DataBaseTableName, DataBaseColumnName)
-            insert(connection, sql, DataFrame, DataBaseTableName)
+            delete(connection, sql, Key, DataBaseTableName, DataBaseColumnName, mode)
+            insertMany(connection, sql, DataFrame, DataBaseTableName)
             
             sql.close()
             connection.close()
@@ -150,26 +169,25 @@ def mainUpdate(DataFrame: pd.DataFrame, DataBase: str ,DataBaseTableName: str, D
         sql.close()
         connection.close()
         return 0
-            
+    
     except (ConnectionError):
         logging.error('Connection Error, trying again')
         cont += 1
         sql.close()
         connection.close()
         sleep(1)
-        mainUpdate(DataFrame, DataBase, DataBaseTableName, DataBaseColumnName, cont)
+        mainUpdate(DataFrame, DataBase, DataBaseTableName, DataBaseColumnName, logfilename, cont=cont)
         
-    except ('ExecutionError'):
+    except Exception as error:
         logging.error('Execution Error, trying again')
         cont += 1
-        mainUpdate(DataFrame, DataBase, DataBaseTableName, DataBaseColumnName, cont)
+        mainUpdate(DataFrame, DataBase, DataBaseTableName, DataBaseColumnName, logfilename, cont=cont)
         
-def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logfilename:str, password, host = 'localhost', selectType='*', cont=0):
+def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logfilename:str, host = 'localhost', selectType='*', cont=0):
     try:
         logging = loggingPredef(logfilename)
         if cont < 10:
-            connection, sql = connectBD(DataBase, password, host)
-            
+            connection, sql = connectBD(DataBase, host)
             dataFrame = select(sql, DataBaseTableName, selectType)
             dataFrame.to_excel(path, index=False)
             logging.info('The Values are exported with sucesfull')
@@ -177,7 +195,7 @@ def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logfilename:str,
             sql.close()
             connection.close()
             logging.info('closing connection')
-            return dataFrame
+            return 1
     
         logging.warning('not been possible execute the program')
         sql.close()
@@ -190,9 +208,9 @@ def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logfilename:str,
         sql.close()
         connection.close()
         sleep(1)
-        mainExport(DataBase ,DataBaseTableName, path, selectType, cont)
+        mainExport(DataBase ,DataBaseTableName, path, logfilename, selectType=selectType, cont=cont)
         
     except ('ExecutionError'):
         logging.error('Execution Error, trying again')
         cont += 1        
-        mainExport(DataBase ,DataBaseTableName, path, selectType, cont)
+        mainExport(DataBase ,DataBaseTableName, path, logfilename, selectType=selectType, cont=cont)
