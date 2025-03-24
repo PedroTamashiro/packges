@@ -196,12 +196,10 @@ def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logfilename:str,
             connection.close()
             logging.info('closing connection')
             return 1
-    
         logging.warning('not been possible execute the program')
         sql.close()
         connection.close()
-        return 0
-        
+        return 0   
     except (ConnectionError):
         logging.error('Connection Error, trying again')
         cont += 1
@@ -209,8 +207,7 @@ def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logfilename:str,
         connection.close()
         sleep(1)
         mainExport(DataBase ,DataBaseTableName, path, logfilename, selectType=selectType, cont=cont)
-        
-    except ('ExecutionError'):
+    except Exception as error:
         logging.error('Execution Error, trying again')
         cont += 1        
         mainExport(DataBase ,DataBaseTableName, path, logfilename, selectType=selectType, cont=cont)
