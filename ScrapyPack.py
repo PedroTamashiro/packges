@@ -115,3 +115,14 @@ def LoginNeo(driver, username, password):
     except Exception as error:
         raise error
     return True
+
+def element_exists(driver, element, by='id'):
+        try:
+            if by == 'id':
+                    elem = WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.ID, element)))
+                    return True
+            elif by == 'xpath':
+                elem = WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.XPATH, element)))
+                return True
+        except Exception:
+                return False
