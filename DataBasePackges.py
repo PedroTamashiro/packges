@@ -15,7 +15,7 @@ def loggingPredef(logfilename):
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-    log_path = log_dir + r'\updateTeam.log'
+    log_path = log_dir + '//' + {logfilename}
 
     logging.basicConfig(
         filename=log_path,
@@ -149,9 +149,8 @@ def select(cursor, dataBaseTable, selectType='*'):
     except Exception as error:
         raise error
     
-def mainUpdate(DataFrame: pd.DataFrame, DataBase: str ,DataBaseTableName: str, DataBaseColumnName: str, logfilename:str, host = 'localhost', mode = 0,cont=0):
+def mainUpdate(DataFrame: pd.DataFrame, DataBase: str ,DataBaseTableName: str, DataBaseColumnName: str, logging, host = 'localhost', mode = 0,cont=0):
     try:
-        logging = loggingPredef(logfilename)
         if cont < 10:
             connection, sql = connectBD(DataBase, host)
             Key = DataFrame[DataBaseColumnName]
@@ -162,30 +161,27 @@ def mainUpdate(DataFrame: pd.DataFrame, DataBase: str ,DataBaseTableName: str, D
             sql.close()
             connection.close()
             logging.info('closing connection')
-
             return 1
         
         logging.warning('not been possible execute the program')
         sql.close()
         connection.close()
         return 0
-    
     except (ConnectionError):
         logging.error('Connection Error, trying again')
         cont += 1
         sql.close()
         connection.close()
         sleep(1)
-        mainUpdate(DataFrame, DataBase, DataBaseTableName, DataBaseColumnName, logfilename, cont=cont)
+        mainUpdate(DataFrame, DataBase, DataBaseTableName, DataBaseColumnName, logging, cont=cont)
         
     except Exception as error:
         logging.error('Execution Error, trying again')
         cont += 1
-        mainUpdate(DataFrame, DataBase, DataBaseTableName, DataBaseColumnName, logfilename, cont=cont)
+        mainUpdate(DataFrame, DataBase, DataBaseTableName, DataBaseColumnName, logging, cont=cont)
         
-def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logfilename:str, host = 'localhost', selectType='*', cont=0):
+def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logging, host = 'localhost', selectType='*', cont=0):
     try:
-        logging = loggingPredef(logfilename)
         if cont < 10:
             connection, sql = connectBD(DataBase, host)
             dataFrame = select(sql, DataBaseTableName, selectType)
@@ -206,8 +202,8 @@ def mainExport(DataBase: str ,DataBaseTableName: str, path:str, logfilename:str,
         sql.close()
         connection.close()
         sleep(1)
-        mainExport(DataBase ,DataBaseTableName, path, logfilename, selectType=selectType, cont=cont)
+        mainExport(DataBase ,DataBaseTableName, path, logging, selectType=selectType, cont=cont)
     except Exception as error:
         logging.error('Execution Error, trying again')
         cont += 1        
-        mainExport(DataBase ,DataBaseTableName, path, logfilename, selectType=selectType, cont=cont)
+        mainExport(DataBase ,DataBaseTableName, path, logging, selectType=selectType, cont=cont)

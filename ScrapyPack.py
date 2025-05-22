@@ -47,6 +47,13 @@ def clickButton(driver, x, by='XPATH'):
                         EC.presence_of_element_located((By.CSS_SELECTOR, x))
                     )
                 button = driver.find_element(By.CSS_SELECTOR, x).click()
+                
+            elif by == 'class':
+                wait = WebDriverWait(driver, 3600).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, x))
+                    )
+                button = driver.find_element(By.CLASS_NAME, x).click()
+                
             return button
         except:
             print('erro')
@@ -69,9 +76,15 @@ def javaScriptClick(driver, x, by='XPATH'):
                 driver.execute_script('arguments[0].click()', button)
             elif by == 'css':
                 wait = WebDriverWait(driver, 3600).until(
-                        EC.presence_of_element_located((By.ID, x))
+                        EC.presence_of_element_located((By.CSS_SELECTOR, x))
                     )
                 button = driver.find_element(By.CSS_SELECTOR, x)
+                driver.execute_script('arguments[0].click()', button)
+            elif by == 'class':
+                wait = WebDriverWait(driver, 3600).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, x))
+                    )
+                button = driver.find_element(By.CLASS_NAME, x)
                 driver.execute_script('arguments[0].click()', button)
             return button
         except:
@@ -88,6 +101,12 @@ def wait_for_load(driver, element, by='xpath', time=30,trys=10):
             elif by == 'xpath' :
                 elem = WebDriverWait(driver, time).until(EC.presence_of_element_located((By.XPATH, element)))
                 return elem
+            elif by == 'class':
+                elem = WebDriverWait(driver, time).until(EC.presence_of_element_located((By.CLASS_NAME, element)))
+                return elem
+            elif by == 'css':
+                elem = WebDriverWait(driver, time).until(EC.presence_of_element_located((By.CSS_SELECTOR, element)))
+                return elem
 
         except Exception:
             continue
@@ -95,7 +114,6 @@ def wait_for_load(driver, element, by='xpath', time=30,trys=10):
 
 def LoginNeo(driver, username, password):
     try:
-        driver.get('https://app.neosales.com.br/home')
         wait_for_load(driver,"/html/body/div[1]/flow-container-root-2521314/vaadin-vertical-layout/vaadin-vertical-layout/vaadin-vertical-layout/vaadin-text-field[1]/input", "xpath")
         driver.find_element("xpath", "/html/body/div[1]/flow-container-root-2521314/vaadin-vertical-layout/vaadin-vertical-layout/vaadin-vertical-layout/vaadin-text-field[1]/input").send_keys(username)
         driver.find_element("xpath", "/html/body/div[1]/flow-container-root-2521314/vaadin-vertical-layout/vaadin-vertical-layout/vaadin-vertical-layout/vaadin-password-field/input").send_keys(password)
@@ -116,13 +134,16 @@ def LoginNeo(driver, username, password):
         raise error
     return True
 
-def element_exists(driver, element, by='id'):
+def element_exists(driver, element, by='xpath'):
         try:
             if by == 'id':
-                    elem = WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.ID, element)))
-                    return True
+                elem = WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.ID, element)))
+                return True
             elif by == 'xpath':
                 elem = WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.XPATH, element)))
+                return True
+            elif by == 'class':
+                elem = WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CLASS_NAME, element)))
                 return True
         except Exception:
                 return False
