@@ -28,6 +28,31 @@ def init_chrome(DownloadPath, mode='1'):
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
+def xpathByElement(driver, element):
+    xpath = driver.execute_script("""
+        function getXPath(el) {
+            if (el.id !== '') {
+                return 'id(\"' + el.id + '\")';
+            }
+            if (el === document.body) {
+                return el.tagName.toLowerCase();
+            }
+            let ix = 0;
+            let siblings = el.parentNode.childNodes;
+            for (let i=0; i<siblings.length; i++) {
+                let sibling = siblings[i];
+                if (sibling === el) {
+                    return getXPath(el.parentNode) + '/' + el.tagName.toLowerCase() + '[' + (ix+1) + ']';
+                }
+                if (sibling.nodeType === 1 && sibling.tagName === el.tagName) {
+                    ix++;
+                }
+            }
+        }
+        return getXPath(arguments[0]);
+        """, element)
+    return xpath
+
 def clickButton(driver, x, by='XPATH'):
     button = 0
     while button != -1:
@@ -146,4 +171,4 @@ def element_exists(driver, element, by='xpath'):
                 elem = WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CLASS_NAME, element)))
                 return True
         except Exception:
-                return False
+            return False
